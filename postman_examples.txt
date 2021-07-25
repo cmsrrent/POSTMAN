@@ -1,0 +1,183 @@
+POSTMAN
+=======
+
+
+Body Response types
++++++++++++++++++++
+JSON - pm.response.json()
+XML - xml2json(responseBody)
+HTML - cheerio(pm.resoponse.text())
+Plain-text - pm.response.text()
+CSV - csv-parse/lib/sync
+
+Assertion examples
+++++++++++++++++++
+
+Chai assertion library reference - https://www.chaijs.com/api/bdd/
+
+const response = pm.response.json(); // get the response object
+
+pm.expect(response.name).to.eql("Jane"); string test
+pm.expect(response.age).to.eql(29); numeric test
+pm.expect(response.other["social-media"][1]).to.eql("Instagram"); array with special chars in object name
+pm.expect(response.other["social-media"]).to.include("Instagram"); search all alements in array social-media
+
+if the response returns an array of repeating elements then it can be accessed as follows:
+
+const person = response[0]; // this will place the first array of objects into person
+
+const person = response.find(item => item.name === "Jane"); // this will iterate through objects in the JSON response and then return the matched object with the item with "name" of Jane
+
+// iterate over array to find matching object and assign it to manafacturer variable
+for (let filter of jsonData.filters) {
+	if (filter.name == "Manafacturer") {
+		manafacturer = filter;
+	}
+}
+
+to.eql v to.equal // "equal" checks to see if actual object is identical, "eql" checks values are the same
+
+Other examples
+++++++++++++++
+pm.expect(a).to.not.eql(b); // check they don't have the same values
+pm.expect(variable).to.be.true; // check variable resolves to true
+pm.expect(variable).to.be.false; // check variable resolves to false
+pm.expect(variable).to.be.null; // check variable resolves to null
+pm.expect(variable).to.be.undefined; // check variable resolves to undefined
+pm.expect([1,2,3]).to.include(2); // check 2 is in array
+pm.expect(2).to.be.oneOf([1,2,3]); // 
+pm.expect('John Doe').to.match(/^John/); // regex that name starts with John 
+
+//test that a data property exists in response, property named "data" in this example
+const jsonData = pm.response.json();
+
+pm.test('Has data', function() {
+  pm.expect(jsonData).to.have.property('data');
+});
+
+// test that no json response was returned
+pm.test("Should not be valid", function() {
+	pm.expect(response.json).to.be.null;
+})
+
+Variables
++++++++++
+Global - quick use for prototyping, use sparingly, clear when used
+Collection - tied to collection can't update from scripts, limited use cases, constants
+Environment - tied to the selected environment, great for urls, login/pw
+Data - working with data sets, only exist during iteration
+Local - 
+
+Don't mix variable names accross scope domains!
+
+The lowest scope takes precidence when variable has same name
+
+get, set and clear variables using script
+-----------------------------------------
+pm.globals.get("variable_key");
+pm.globals.set("variable_key", variable_value);
+pm.globals.unset("variable_key"); // clear single variable
+pm.globals.clear(); // deletes all globals!!
+
+globals/environment/collection/ //different pm. references for accessing variabls scope
+
+set environment variable called 'environment' with value local/dev1/prod this can be called in script to determine which environment we are running against
+
+important variable type
+------------------------
+pm.variables.get("variable_key") // this will get the best fit scope
+
+This "variables" type can be used interchangably for data or collection variable
+
+Pre-Request Script usage
+++++++++++++++++++++++++
+No assertions can be made here
+These help to make requests dynamic
+Calculate random data, timestamps, parse data from input file
+Add data into variables for use in request or tests
+
+Can build a json object in pre-request and reference in a body variable by json.stringify-ing it:
+
+var metaInfo = 
+{
+	"key1": "value1",
+	"key2": "value"
+}
+
+pm.variables.set(metaInfo, JSOB.stringify(metaInfo))
+
+This can then be referenced in the usual way as {{metaInfo}} to pass as a variable into a request
+
+Workflows
++++++++++
+postman.setNextRequest("RequestName"); // jump to another request rather than the next
+postman.setNextRequest(null); will stop current iteration of the collection run
+
+Working with Data files
++++++++++++++++++++++++
+Using data file input for iteration use within a collection
+
+reference data elements from csv or json file in a script using:
+pm.iterationData.get("column_name")
+
+or within a postman variable as {{column_name}}
+
+NB - 'Retry' in collection runner doesn't work with data files!!
+
+
+Passing cookies as headers - including variables
+++++++++++++++++++++++++++++
+In the header setup a key as 'Cookie' with a <cookieName>=<cookieValue> pair separated by semicolon
+This allows the additional flexibility of passing variables into the cookies
+
+Make a data driven test work in POSTMAN
++++++++++++++++++++++++++++++++++++++++
+For an external data driven collection, we can setup the collection in POSTMAN so that it will still
+function correct in POSTMAN itself for local testing
+
+1 - Setup the same data variable names in the Collection scope of the test with some default values
+2 - References in scripts (pre req or tests) to pm.iterationData.get("varname") rename to 
+pm.variables.get("varname") which will then references the relevant scope when executed
+
+
+JSON Schema validation
++++++++++++++++++++++++
+
+Example response JSON body:
+{
+    "firstname": "Susan",
+    "lastname": "Smith",
+    "totalprice": 952,
+    "depositpaid": true,
+    "bookingdates": {
+        "checkin": "2016-09-30",
+        "checkout": "2018-08-06"
+    }
+}
+
+
+In Tests, this schema and test will validate against the response
+
+var schema = {
+    "type": "object",
+    "properties": {
+        "firstname": {"type": "string"},
+        "lastname": {"type": "string"},
+        "totalprice": {"type": "integer"},
+        "depositpaid": {"type": "boolean"},
+        "bookingdates": {
+            "type": "object",
+            "properties":{
+            "checkin": {"type": "string"},
+            "checkout": {"type": "string"}
+            },  "required": ["checkin", "checkout"]   
+        }
+    },
+    "required": ["firstname", "lastname", "totalprice", "depositpaid","bookingdates"],
+    "additionalProperties": false
+};
+
+// validate response schema
+pm.test('Schema is valid', function () {
+    pm.response.to.have.jsonSchema(schema);
+});
