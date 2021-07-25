@@ -126,7 +126,7 @@ NB - 'Retry' in collection runner doesn't work with data files!!
 
 
 Passing cookies as headers - including variables
-++++++++++++++++++++++++++++
++++++++++++++++++++++++++++++++++++++++++++++++++
 In the header setup a key as 'Cookie' with a <cookieName>=<cookieValue> pair separated by semicolon
 This allows the additional flexibility of passing variables into the cookies
 
