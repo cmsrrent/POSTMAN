@@ -35,6 +35,13 @@ for (let filter of jsonData.filters) {
 	}
 }
 
+// find how many species have an average height greater than 100
+_.each(jsonData.results, (item) => {
+    if (item.average_height > avgHeight){
+        avgHeightCount++;
+    }
+})
+
 to.eql v to.equal // "equal" checks to see if actual object is identical, "eql" checks values are the same
 
 Other examples
